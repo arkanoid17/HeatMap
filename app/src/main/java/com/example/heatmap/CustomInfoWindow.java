@@ -51,7 +51,7 @@ public class CustomInfoWindow implements GoogleMap.InfoWindowAdapter {
 
             for (String keys :typeColor.keySet()){
                 if (keys.equalsIgnoreCase(listIncidents.get(i).getIncidentTypePrimary())){
-//                    d.setTint(typeColor.get(keys));
+                    d.setTint(typeColor.get(keys));
                     Log.v("tag","typeColor  "+keys+" "+typeColor.get(keys));
                 }
             }
