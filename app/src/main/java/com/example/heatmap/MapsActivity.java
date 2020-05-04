@@ -1,14 +1,29 @@
 package com.example.heatmap;
 
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.ActionBarDrawerToggle;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
+import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.fragment.app.FragmentActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
+import android.app.Activity;
 import android.app.ProgressDialog;
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
+import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -45,15 +60,45 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 
-public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
+public class MapsActivity extends AppCompatActivity implements OnMapReadyCallback {
 
     private GoogleMap mMap;
     List<Incidences> listIncidents = new ArrayList<>();
+
+    private String[] mNavigationDrawerItemTitles;
+    DrawerLayout mDrawerLayout;
+    RecyclerView mDrawerList;
+    Toolbar toolbar;
+    private CharSequence mDrawerTitle;
+    private CharSequence mTitle;
+    ActionBarDrawerToggle mDrawerToggle;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
+
+        mTitle = mDrawerTitle = getTitle();
+        mNavigationDrawerItemTitles= getResources().getStringArray(R.array.navigation_drawer_items_array);
+        mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
+        mDrawerList = (RecyclerView) findViewById(R.id.left_drawer);
+
+        setupToolbar();
+        String[] drawerItem = getResources().getStringArray(R.array.navigation_drawer_items_array);
+
+
+        getSupportActionBar().setDisplayHomeAsUpEnabled(false);
+        getSupportActionBar().setHomeButtonEnabled(true);
+
+        mDrawerList.setLayoutManager(new LinearLayoutManager(this));
+        DrawerItemCustomAdapter adapter = new DrawerItemCustomAdapter(this,  drawerItem);
+        mDrawerList.setAdapter(adapter);
+//        mDrawerList.setOnItemClickListener(new DrawerItemClickListener());
+        mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
+        mDrawerLayout.setDrawerListener(mDrawerToggle);
+        setupDrawerToggle();
+
+
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
@@ -61,6 +106,18 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         new GetIncidences().execute();
 
 
+    }
+
+    void setupDrawerToggle(){
+        mDrawerToggle = new ActionBarDrawerToggle(this,mDrawerLayout,toolbar,R.string.app_name, R.string.app_name);
+        //This is necessary to change the icon of the Drawer Toggle upon state change.
+        mDrawerToggle.syncState();
+    }
+
+    void setupToolbar(){
+        toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+        getSupportActionBar().setDisplayShowHomeEnabled(true);
     }
 
 
@@ -205,6 +262,77 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
+            }
+        }
+    }
+
+
+//    public class DrawerItemCustomAdapter extends ArrayAdapter<String> {
+//
+//        Context mContext;
+//        int layoutResourceId;
+//        String data[] = null;
+//
+//        public DrawerItemCustomAdapter(Context mContext, int layoutResourceId, String[] data) {
+//
+//            super(mContext, layoutResourceId, data);
+//            this.layoutResourceId = layoutResourceId;
+//            this.mContext = mContext;
+//            this.data = data;
+//        }
+//
+//        @Override
+//        public View getView(int position, View convertView, ViewGroup parent) {
+//
+//            View listItem = convertView;
+//
+//            LayoutInflater inflater = ((Activity) mContext).getLayoutInflater();
+//            listItem = inflater.inflate(layoutResourceId, parent, false);
+//
+//            TextView textViewName = (TextView) listItem.findViewById(R.id.textViewName);
+//
+//            String folder = data[position];
+//
+//
+//            textViewName.setText(folder);
+//
+//            return listItem;
+//        }
+//    }
+
+
+    public class DrawerItemCustomAdapter extends RecyclerView.Adapter<DrawerItemCustomAdapter.ViewHolder>{
+
+        Context mContext;
+        String data[] = null;
+        public DrawerItemCustomAdapter(Context mContext,  String[] data) {
+            this.mContext = mContext;
+            this.data = data;
+        }
+
+        @NonNull
+        @Override
+        public DrawerItemCustomAdapter.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+            return new ViewHolder(LayoutInflater.from(MapsActivity.this).inflate(R.layout.list_view_item_row,parent,false));
+        }
+
+        @Override
+        public void onBindViewHolder(@NonNull DrawerItemCustomAdapter.ViewHolder holder, int position) {
+            holder.textViewName.setText(data[position]);
+        }
+
+        @Override
+        public int getItemCount() {
+            return data.length;
+        }
+
+        public class ViewHolder extends RecyclerView.ViewHolder {
+
+            TextView textViewName;
+
+            public ViewHolder(@NonNull View itemView) {
+                super(itemView);
+                textViewName = itemView.findViewById(R.id.textViewName);
             }
         }
     }

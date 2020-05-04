@@ -2,6 +2,7 @@ package com.example.heatmap;
 
 import android.content.Context;
 import android.graphics.drawable.Drawable;
+import android.graphics.drawable.GradientDrawable;
 import android.text.Html;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -47,14 +48,19 @@ public class CustomInfoWindow implements GoogleMap.InfoWindowAdapter {
                 tvDateTime.setText(Html.fromHtml("Incident Date:  "+"<b>"+listIncidents.get(i).getIncidentDatetime()+"</b>"));
                 tvType.setText(Html.fromHtml("Incident Type:  "+"<b>"+listIncidents.get(i).getIncidentTypePrimary()+"</b>"));
                 tvDescript.setText(Html.fromHtml("Incident Description:  "+"<b>"+listIncidents.get(i).getIncidentDescription()+"</b>"));
-            }
-
-            for (String keys :typeColor.keySet()){
-                if (keys.equalsIgnoreCase(listIncidents.get(i).getIncidentTypePrimary())){
-//                    d.setTint(typeColor.get(keys));
-                    Log.v("tag","typeColor  "+keys+" "+typeColor.get(keys));
+                for (String keys :typeColor.keySet()){
+                    if (keys.equalsIgnoreCase(listIncidents.get(i).getIncidentTypePrimary())){
+                        view.setBackgroundResource(0);
+                        GradientDrawable border = new GradientDrawable();
+                        border.setColor(0xFFFFFFFF); //white background
+                        border.setStroke(5, typeColor.get(keys));
+                        view.setBackground(border);
+                        Log.v("tag","typeColor  "+keys+" "+typeColor.get(keys));
+                    }
                 }
             }
+
+
         }
 
     }
