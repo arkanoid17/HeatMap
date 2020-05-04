@@ -1,0 +1,47 @@
+<LinearLayout android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="18dp"
+    android:minWidth="350dp"
+    android:background="@drawable/bg_dialog"
+    android:gravity="center_horizontal"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Incident Details"
+        android:textSize="18sp"
+        android:textColor="#222222"
+        android:textStyle="bold"/>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Incident Id: "
+        android:textSize="12sp"
+        android:layout_marginTop="15dp"
+        android:id="@+id/tv_incident_id"/>
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="12sp"
+        android:text="Incident Date and Time: "
+        android:layout_marginTop="8dp"
+        android:id="@+id/tv_incident_date_time"/>
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Incident Type: "
+        android:textSize="12sp"
+        android:layout_marginTop="8dp"
+        android:id="@+id/tv_incident_type"/>
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Incident Description: "
+        android:textSize="12sp"
+        android:layout_marginTop="8dp"
+        android:id="@+id/tv_incident_date_description"/>
+
+</LinearLayout>
