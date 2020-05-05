@@ -127,6 +127,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         if(vmOverlay!=null){
             vmOverlay.remove();
+            mMap.clear();
         }
 
         int height = 5;
@@ -135,12 +136,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         Bitmap b = bitmapdraw.getBitmap();
         Bitmap smallMarker = Bitmap.createScaledBitmap(b, width, height, false);
 
-        for (int i=0;i<listIncidents.size();i++) {
-            MarkerOptions m = new MarkerOptions().position(new LatLng(Double.parseDouble(listIncidents.get(i).getLatitude()), Double.parseDouble(listIncidents.get(i).getLongitude()))).title(listIncidents.get(i).getIncidentId());
-            m.alpha(0);
-            m.icon(BitmapDescriptorFactory.fromBitmap(smallMarker));
-            mMap.addMarker(m);
-        }
 
 
         List<LatLng> list = new ArrayList<>();
@@ -170,6 +165,16 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     list.add(new LatLng(Double.parseDouble(listIncidents.get(i).getLatitude()),Double.parseDouble(listIncidents.get(i).getLongitude())));
                 }
 
+            }
+        }
+
+
+        for (int i=0;i<listIncidents.size();i++) {
+            if (type.equalsIgnoreCase(listIncidents.get(i).getIncidentTypePrimary())){
+                MarkerOptions m = new MarkerOptions().position(new LatLng(Double.parseDouble(listIncidents.get(i).getLatitude()), Double.parseDouble(listIncidents.get(i).getLongitude()))).title(listIncidents.get(i).getIncidentId());
+                m.alpha(0);
+                m.icon(BitmapDescriptorFactory.fromBitmap(smallMarker));
+                mMap.addMarker(m);
             }
         }
 
