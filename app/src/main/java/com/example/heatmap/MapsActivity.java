@@ -17,6 +17,7 @@ import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -72,7 +73,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private CharSequence mDrawerTitle;
     private CharSequence mTitle;
     ActionBarDrawerToggle mDrawerToggle;
-
+    TileOverlay vmOverlay;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -82,6 +83,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         mNavigationDrawerItemTitles= getResources().getStringArray(R.array.navigation_drawer_items_array);
         mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
         mDrawerList = (RecyclerView) findViewById(R.id.left_drawer);
+        mDrawerLayout.bringToFront();
+        mDrawerList.bringToFront();
 
         setupToolbar();
         String[] drawerItem = getResources().getStringArray(R.array.navigation_drawer_items_array);
@@ -91,9 +94,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         getSupportActionBar().setHomeButtonEnabled(true);
 
         mDrawerList.setLayoutManager(new LinearLayoutManager(this));
-        DrawerItemCustomAdapter adapter = new DrawerItemCustomAdapter(this,  drawerItem);
-        mDrawerList.setAdapter(adapter);
-//        mDrawerList.setOnItemClickListener(new DrawerItemClickListener());
+
         mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
         mDrawerLayout.setDrawerListener(mDrawerToggle);
         setupDrawerToggle();
@@ -122,7 +123,11 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
 
 
-    private void addHeatMap() {
+    private void addHeatMap(String type) {
+
+        if(vmOverlay!=null){
+            vmOverlay.remove();
+        }
 
         int height = 5;
         int width = 5;
@@ -154,8 +159,18 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         // Get the data: latitude/longitude positions of police stations.
 
-        for (int i=0;i<listIncidents.size();i++){
-            list.add(new LatLng(Double.parseDouble(listIncidents.get(i).getLatitude()),Double.parseDouble(listIncidents.get(i).getLongitude())));
+        if (type.equalsIgnoreCase("All")){
+            for (int i=0;i<listIncidents.size();i++){
+                list.add(new LatLng(Double.parseDouble(listIncidents.get(i).getLatitude()),Double.parseDouble(listIncidents.get(i).getLongitude())));
+            }
+        }else {
+            for (int i=0;i<listIncidents.size();i++){
+
+                if(type.equalsIgnoreCase(listIncidents.get(i).getIncidentTypePrimary())){
+                    list.add(new LatLng(Double.parseDouble(listIncidents.get(i).getLatitude()),Double.parseDouble(listIncidents.get(i).getLongitude())));
+                }
+
+            }
         }
 
 
@@ -184,7 +199,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 .gradient(gradient)
                 .build();
         // Add a tile overlay to the map, using the heat map tile provider.
-        TileOverlay vmOverlay = mMap.addTileOverlay(new TileOverlayOptions().tileProvider(mProvider));
+         vmOverlay = mMap.addTileOverlay(new TileOverlayOptions().tileProvider(mProvider));
 
         mProvider.setOpacity(0.7);
         vmOverlay.clearTileCache();
@@ -247,7 +262,13 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         @Override
         protected void onPostExecute(String result) {
             super.onPostExecute(result);
-            loading.dismiss();
+
+            new Handler().postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    loading.dismiss();
+                }
+            },2000);
 
             if (result != null) {
                 try {
@@ -256,7 +277,18 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     Gson gson = new Gson();
                     Type type = new TypeToken<List<Incidences>>(){}.getType();
                     listIncidents.addAll((Collection<? extends Incidences>) gson.fromJson(ParentjObject.toString(), type));
-                    addHeatMap();
+                    addHeatMap("All");
+                    List<String> list = new ArrayList<>();
+                    list.clear();
+                    list.add("All");
+                    for (int i = 0;i<listIncidents.size();i++){
+                        if (!(list.contains(listIncidents.get(i).getIncidentTypePrimary()))){
+                            list.add(listIncidents.get(i).getIncidentTypePrimary());
+                        }
+                    }
+
+                    DrawerItemCustomAdapter adapter = new DrawerItemCustomAdapter(MapsActivity.this,  list);
+                    mDrawerList.setAdapter(adapter);
 
 
                 } catch (JSONException e) {
@@ -267,45 +299,13 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
 
-//    public class DrawerItemCustomAdapter extends ArrayAdapter<String> {
-//
-//        Context mContext;
-//        int layoutResourceId;
-//        String data[] = null;
-//
-//        public DrawerItemCustomAdapter(Context mContext, int layoutResourceId, String[] data) {
-//
-//            super(mContext, layoutResourceId, data);
-//            this.layoutResourceId = layoutResourceId;
-//            this.mContext = mContext;
-//            this.data = data;
-//        }
-//
-//        @Override
-//        public View getView(int position, View convertView, ViewGroup parent) {
-//
-//            View listItem = convertView;
-//
-//            LayoutInflater inflater = ((Activity) mContext).getLayoutInflater();
-//            listItem = inflater.inflate(layoutResourceId, parent, false);
-//
-//            TextView textViewName = (TextView) listItem.findViewById(R.id.textViewName);
-//
-//            String folder = data[position];
-//
-//
-//            textViewName.setText(folder);
-//
-//            return listItem;
-//        }
-//    }
 
 
     public class DrawerItemCustomAdapter extends RecyclerView.Adapter<DrawerItemCustomAdapter.ViewHolder>{
 
         Context mContext;
-        String data[] = null;
-        public DrawerItemCustomAdapter(Context mContext,  String[] data) {
+        List<String> data;
+        public DrawerItemCustomAdapter(Context mContext,  List<String> data) {
             this.mContext = mContext;
             this.data = data;
         }
@@ -318,12 +318,19 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         @Override
         public void onBindViewHolder(@NonNull DrawerItemCustomAdapter.ViewHolder holder, int position) {
-            holder.textViewName.setText(data[position]);
+            holder.textViewName.setText(data.get(position));
+            holder.itemView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    mDrawerLayout.closeDrawers();
+                    addHeatMap(data.get(position));
+                }
+            });
         }
 
         @Override
         public int getItemCount() {
-            return data.length;
+            return data.size();
         }
 
         public class ViewHolder extends RecyclerView.ViewHolder {
