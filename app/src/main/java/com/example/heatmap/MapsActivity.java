@@ -216,7 +216,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         vmOverlay.clearTileCache();
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(list.get(0),14));
         tvType.setText(type);
-        tvCount.setText(list.size());
+        tvCount.setText(list.size()+" " );
 
     }
 
