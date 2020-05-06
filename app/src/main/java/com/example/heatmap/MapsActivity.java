@@ -74,10 +74,16 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private CharSequence mTitle;
     ActionBarDrawerToggle mDrawerToggle;
     TileOverlay vmOverlay;
+
+    TextView tvType,tvCount;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
+
+        tvType = findViewById(R.id.tv_type);
+        tvCount = findViewById(R.id.tv_count);
 
         mTitle = mDrawerTitle = getTitle();
         mNavigationDrawerItemTitles= getResources().getStringArray(R.array.navigation_drawer_items_array);
@@ -209,6 +215,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         mProvider.setOpacity(0.7);
         vmOverlay.clearTileCache();
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(list.get(0),14));
+        tvType.setText(type);
+        tvCount.setText(list.size());
 
     }
 
