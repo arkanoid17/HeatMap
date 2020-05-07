@@ -5,7 +5,9 @@ import android.location.Location;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
-public class Incidences {
+import java.io.Serializable;
+
+public class Incidences implements Serializable {
     @SerializedName("incident_id")
     @Expose
     private String incidentId;

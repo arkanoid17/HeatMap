@@ -3,26 +3,38 @@ package com.example.heatmap;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.view.ContextThemeWrapper;
+import androidx.appcompat.widget.SearchView;
 import androidx.appcompat.widget.Toolbar;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.fragment.app.FragmentActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.ColorDrawable;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.LayoutInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.ArrayAdapter;
+import android.widget.EditText;
+import android.widget.Filter;
+import android.widget.Filterable;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -36,6 +48,7 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.TileOverlay;
 import com.google.android.gms.maps.model.TileOverlayOptions;
+import com.google.android.material.navigation.NavigationView;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.google.maps.android.heatmaps.Gradient;
@@ -66,16 +79,16 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private GoogleMap mMap;
     List<Incidences> listIncidents = new ArrayList<>();
 
-    private String[] mNavigationDrawerItemTitles;
     DrawerLayout mDrawerLayout;
-    RecyclerView mDrawerList;
     Toolbar toolbar;
-    private CharSequence mDrawerTitle;
-    private CharSequence mTitle;
     ActionBarDrawerToggle mDrawerToggle;
     TileOverlay vmOverlay;
+    Dialog dialog;
 
-    TextView tvType,tvCount;
+    String category = "All";
+    HashMap<String,Integer> typeColor = new HashMap<>();
+
+    TextView tvType,tvCount,tvTypeDesc;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -84,26 +97,54 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         tvType = findViewById(R.id.tv_type);
         tvCount = findViewById(R.id.tv_count);
+        tvTypeDesc = findViewById(R.id.tv_type_desc);
 
-        mTitle = mDrawerTitle = getTitle();
-        mNavigationDrawerItemTitles= getResources().getStringArray(R.array.navigation_drawer_items_array);
+
+
         mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
-        mDrawerList = (RecyclerView) findViewById(R.id.left_drawer);
         mDrawerLayout.bringToFront();
-        mDrawerList.bringToFront();
+
 
         setupToolbar();
-        String[] drawerItem = getResources().getStringArray(R.array.navigation_drawer_items_array);
 
 
         getSupportActionBar().setDisplayHomeAsUpEnabled(false);
         getSupportActionBar().setHomeButtonEnabled(true);
 
-        mDrawerList.setLayoutManager(new LinearLayoutManager(this));
 
+        NavigationView navigationView = (NavigationView) findViewById(R.id.navigation);
+        navigationView.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener() {
+            @Override
+            public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
+                switch(menuItem.getItemId()){
+                    case R.id.fbt:
+                        mDrawerLayout.closeDrawers();
+                        showDialog("type");
+                        category = "type";
+                        break;
+                    case R.id.fbc:
+                        showDialog("city");
+                        mDrawerLayout.closeDrawers();
+                        category = "city";
+                        break;
+                    case R.id.fbi:
+                        showDialog("id");
+                        mDrawerLayout.closeDrawers();
+                        category = "id";
+                        break;
+                }
+                return true;
+            }
+
+        });
         mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
         mDrawerLayout.setDrawerListener(mDrawerToggle);
         setupDrawerToggle();
+
+
+
+
+
 
 
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
@@ -128,6 +169,115 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
 
+    void showDialog(String s){
+         dialog = new Dialog(this,R.style.Theme_Dialog);
+        dialog.setContentView(R.layout.dialog_filter);
+        dialog.setCancelable(true);
+        WindowManager.LayoutParams lp = new WindowManager.LayoutParams();
+        lp.copyFrom(dialog.getWindow().getAttributes());
+        lp.width = ViewGroup.LayoutParams.MATCH_PARENT;
+        lp.height = ViewGroup.LayoutParams.WRAP_CONTENT;
+        lp.gravity = Gravity.BOTTOM;
+        lp.windowAnimations = R.style.DialogAnimation;
+        dialog.getWindow().setAttributes(lp);
+        dialog.getWindow().setBackgroundDrawable(new ColorDrawable(android.graphics.Color.TRANSPARENT));
+        dialog.show();
+
+        RecyclerView rv = dialog.findViewById(R.id.rv);
+
+        rv.setLayoutManager(new LinearLayoutManager(this));
+
+        switch (s){
+            case "type":
+                List<String> list = new ArrayList<>();
+                list.clear();
+                for (int i=0;i<listIncidents.size();i++){
+                    if (!(list.contains(listIncidents.get(i).getParentIncidentType()))){
+                        list.add(listIncidents.get(i).getParentIncidentType());
+                    }
+                }
+
+                DrawerItemCustomAdapter adapter = new DrawerItemCustomAdapter(this,list);
+
+                rv.setAdapter(adapter);
+                androidx.appcompat.widget.SearchView sv = dialog.findViewById(R.id.sv);
+                ((EditText)sv.findViewById(R.id.search_src_text)).setTextColor(getResources().getColor(R.color.black));
+                sv.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+                    @Override
+                    public boolean onQueryTextSubmit(String s) {
+                    adapter.getFilter().filter(s);
+                        return true;
+                    }
+
+                    @Override
+                    public boolean onQueryTextChange(String s) {
+                        adapter.getFilter().filter(s);
+                        return true;
+                    }
+                });
+                break;
+            case "city":
+                List<String> list1 = new ArrayList<>();
+                list1.clear();
+                for (int i=0;i<listIncidents.size();i++){
+                    if(!(list1.contains(listIncidents.get(i).getCity()))) {
+                        list1.add(listIncidents.get(i).getCity());
+                    }
+
+                }
+
+                DrawerItemCustomAdapter adapter1 = new DrawerItemCustomAdapter(this,list1);
+
+                rv.setAdapter(adapter1);
+                androidx.appcompat.widget.SearchView sv1 = dialog.findViewById(R.id.sv);
+                ((EditText)sv1.findViewById(R.id.search_src_text)).setTextColor(getResources().getColor(R.color.black));
+                sv1.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+                    @Override
+                    public boolean onQueryTextSubmit(String s) {
+                        adapter1.getFilter().filter(s);
+                        return true;
+                    }
+
+                    @Override
+                    public boolean onQueryTextChange(String s) {
+                        adapter1.getFilter().filter(s);
+                        return true;
+                    }
+                });
+                break;
+            case "id":
+                List<String> list2 = new ArrayList<>();
+                list2.clear();
+                for (int i=0;i<listIncidents.size();i++){
+                        list2.add(listIncidents.get(i).getIncidentId());
+                }
+
+                DrawerItemCustomAdapter adapter2 = new DrawerItemCustomAdapter(this,list2);
+
+                rv.setAdapter(adapter2);
+                androidx.appcompat.widget.SearchView sv2 = dialog.findViewById(R.id.sv);
+                ((EditText)sv2.findViewById(R.id.search_src_text)).setTextColor(getResources().getColor(R.color.black));
+                sv2.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+                    @Override
+                    public boolean onQueryTextSubmit(String s) {
+                        adapter2.getFilter().filter(s);
+                        return true;
+                    }
+
+                    @Override
+                    public boolean onQueryTextChange(String s) {
+                        adapter2.getFilter().filter(s);
+                        return true;
+                    }
+                });
+                break;
+
+
+
+        }
+
+    }
+
 
     private void addHeatMap(String type) {
 
@@ -147,42 +297,94 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         List<LatLng> list = new ArrayList<>();
 
 //        List<String> type = new ArrayList<>();
-        HashMap<String,Integer> typeColor = new HashMap<>();
 
-        for (int i=0;i<listIncidents.size();i++){
 
-            if (!(typeColor.keySet().contains(listIncidents.get(i).getIncidentTypePrimary()))){
-                Random rnd = new Random();
-                int color = Color.argb(255, rnd.nextInt(256), rnd.nextInt(256), rnd.nextInt(256));
-                typeColor.put(listIncidents.get(i).getIncidentTypePrimary(),color);
-            }
-        }
 
         // Get the data: latitude/longitude positions of police stations.
 
-        if (type.equalsIgnoreCase("All")){
-            for (int i=0;i<listIncidents.size();i++){
-                list.add(new LatLng(Double.parseDouble(listIncidents.get(i).getLatitude()),Double.parseDouble(listIncidents.get(i).getLongitude())));
-            }
-        }else {
-            for (int i=0;i<listIncidents.size();i++){
-
-                if(type.equalsIgnoreCase(listIncidents.get(i).getIncidentTypePrimary())){
-                    list.add(new LatLng(Double.parseDouble(listIncidents.get(i).getLatitude()),Double.parseDouble(listIncidents.get(i).getLongitude())));
+        switch (category){
+            case "All":
+                tvTypeDesc.setText("Incident Type");
+                for (int i=0;i<listIncidents.size();i++) {
+                    list.add(new LatLng(Double.parseDouble(listIncidents.get(i).getLatitude()), Double.parseDouble(listIncidents.get(i).getLongitude())));
+                    MarkerOptions m = new MarkerOptions().position(new LatLng(Double.parseDouble(listIncidents.get(i).getLatitude()), Double.parseDouble(listIncidents.get(i).getLongitude()))).title(listIncidents.get(i).getIncidentId());
+                    m.alpha(0);
+                    m.icon(BitmapDescriptorFactory.fromBitmap(smallMarker));
+                    mMap.addMarker(m);
                 }
+                break;
+            case "type":
+                tvTypeDesc.setText("Incident Type");
+                for (int i=0;i<listIncidents.size();i++){
+                    if(type.equalsIgnoreCase(listIncidents.get(i).getParentIncidentType())){
+                        list.add(new LatLng(Double.parseDouble(listIncidents.get(i).getLatitude()),Double.parseDouble(listIncidents.get(i).getLongitude())));
+                        MarkerOptions m = new MarkerOptions().position(new LatLng(Double.parseDouble(listIncidents.get(i).getLatitude()), Double.parseDouble(listIncidents.get(i).getLongitude()))).title(listIncidents.get(i).getIncidentId());
+                        m.alpha(0);
+                        m.icon(BitmapDescriptorFactory.fromBitmap(smallMarker));
+                        mMap.addMarker(m);
+                    }
+                }
+                break;
+            case "city":
+                tvTypeDesc.setText("Incident City");
 
-            }
+                for (int i=0;i<listIncidents.size();i++){
+                    if(type.equalsIgnoreCase(listIncidents.get(i).getCity())){
+                        list.add(new LatLng(Double.parseDouble(listIncidents.get(i).getLatitude()),Double.parseDouble(listIncidents.get(i).getLongitude())));
+                        MarkerOptions m = new MarkerOptions().position(new LatLng(Double.parseDouble(listIncidents.get(i).getLatitude()), Double.parseDouble(listIncidents.get(i).getLongitude()))).title(listIncidents.get(i).getIncidentId());
+                        m.alpha(0);
+                        m.icon(BitmapDescriptorFactory.fromBitmap(smallMarker));
+                        mMap.addMarker(m);
+                    }
+                }
+                break;
+            case "id":
+                tvTypeDesc.setText("Incident Id");
+
+                for (int i=0;i<listIncidents.size();i++){
+                    if(type.equalsIgnoreCase(listIncidents.get(i).getIncidentId())){
+                        list.add(new LatLng(Double.parseDouble(listIncidents.get(i).getLatitude()),Double.parseDouble(listIncidents.get(i).getLongitude())));
+                        MarkerOptions m = new MarkerOptions().position(new LatLng(Double.parseDouble(listIncidents.get(i).getLatitude()), Double.parseDouble(listIncidents.get(i).getLongitude()))).title(listIncidents.get(i).getIncidentId());
+                        m.alpha(0);
+                        m.icon(BitmapDescriptorFactory.fromBitmap(smallMarker));
+                        mMap.addMarker(m);
+                    }
+                }
+            break;
+
+
         }
 
+//        if (type.equalsIgnoreCase("All")){
+//            for (int i=0;i<listIncidents.size();i++){
+//                list.add(new LatLng(Double.parseDouble(listIncidents.get(i).getLatitude()),Double.parseDouble(listIncidents.get(i).getLongitude())));
+//            }
+//        }else {
+//            for (int i=0;i<listIncidents.size();i++){
+//
+//                if(type.equalsIgnoreCase(listIncidents.get(i).getIncidentTypePrimary())){
+//                    list.add(new LatLng(Double.parseDouble(listIncidents.get(i).getLatitude()),Double.parseDouble(listIncidents.get(i).getLongitude())));
+//                }
+//
+//            }
+//        }
 
-        for (int i=0;i<listIncidents.size();i++) {
-            if (type.equalsIgnoreCase(listIncidents.get(i).getIncidentTypePrimary())){
-                MarkerOptions m = new MarkerOptions().position(new LatLng(Double.parseDouble(listIncidents.get(i).getLatitude()), Double.parseDouble(listIncidents.get(i).getLongitude()))).title(listIncidents.get(i).getIncidentId());
-                m.alpha(0);
-                m.icon(BitmapDescriptorFactory.fromBitmap(smallMarker));
-                mMap.addMarker(m);
-            }
-        }
+//
+//        for (int i=0;i<listIncidents.size();i++) {
+//            if (type.equalsIgnoreCase(listIncidents.get(i).getIncidentTypePrimary())){
+//                MarkerOptions m = new MarkerOptions().position(new LatLng(Double.parseDouble(listIncidents.get(i).getLatitude()), Double.parseDouble(listIncidents.get(i).getLongitude()))).title(listIncidents.get(i).getIncidentId());
+//                m.alpha(0);
+//                m.icon(BitmapDescriptorFactory.fromBitmap(smallMarker));
+//                mMap.addMarker(m);
+//            }else{
+//                if (type.equalsIgnoreCase("All")){
+//                    MarkerOptions m = new MarkerOptions().position(new LatLng(Double.parseDouble(listIncidents.get(i).getLatitude()), Double.parseDouble(listIncidents.get(i).getLongitude()))).title(listIncidents.get(i).getIncidentId());
+//                    m.alpha(0);
+//                    m.icon(BitmapDescriptorFactory.fromBitmap(smallMarker));
+//                    mMap.addMarker(m);
+//                }
+//            }
+//        }
 
 
         mMap.setInfoWindowAdapter(new CustomInfoWindow(MapsActivity.this,listIncidents,typeColor));
@@ -300,8 +502,15 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                         }
                     }
 
-                    DrawerItemCustomAdapter adapter = new DrawerItemCustomAdapter(MapsActivity.this,  list);
-                    mDrawerList.setAdapter(adapter);
+
+                    for (int i=0;i<listIncidents.size();i++){
+
+                        if (!(typeColor.keySet().contains(listIncidents.get(i).getIncidentTypePrimary()))){
+                            Random rnd = new Random();
+                            int color = Color.argb(255, rnd.nextInt(256), rnd.nextInt(256), rnd.nextInt(256));
+                            typeColor.put(listIncidents.get(i).getIncidentTypePrimary(),color);
+                        }
+                    }
 
 
                 } catch (JSONException e) {
@@ -314,13 +523,15 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
 
 
-    public class DrawerItemCustomAdapter extends RecyclerView.Adapter<DrawerItemCustomAdapter.ViewHolder>{
+    public class DrawerItemCustomAdapter extends RecyclerView.Adapter<DrawerItemCustomAdapter.ViewHolder> implements Filterable {
 
         Context mContext;
         List<String> data;
+        List<String> list_filtered;
         public DrawerItemCustomAdapter(Context mContext,  List<String> data) {
             this.mContext = mContext;
             this.data = data;
+            this.list_filtered = data;
         }
 
         @NonNull
@@ -330,20 +541,63 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
 
         @Override
+        public int getItemViewType(int position) {
+            return position;
+        }
+
+        @Override
+        public long getItemId(int position) {
+            return position;
+        }
+
+        @Override
         public void onBindViewHolder(@NonNull DrawerItemCustomAdapter.ViewHolder holder, int position) {
-            holder.textViewName.setText(data.get(position));
+            holder.textViewName.setText(list_filtered.get(position));
             holder.itemView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
                     mDrawerLayout.closeDrawers();
-                    addHeatMap(data.get(position));
+                    addHeatMap(list_filtered.get(position));
+                    dialog.dismiss();
                 }
             });
         }
 
+
         @Override
         public int getItemCount() {
-            return data.size();
+            return list_filtered.size();
+        }
+
+        @Override
+        public Filter getFilter() {
+            return new Filter() {
+                @Override
+                protected FilterResults performFiltering(CharSequence constraint) {
+                    String string = constraint.toString();
+                    Log.v("TAG", string);
+                    if (string.isEmpty()) {
+                        list_filtered = data;
+                    } else {
+                        List<String> filteredList = new ArrayList<>();
+                        for (String s : data) {
+                            if (s.toLowerCase().contains(string.toLowerCase())) {
+                                filteredList.add(s);
+                            }
+                        }
+                        list_filtered = filteredList;
+                    }
+                    FilterResults filterResults = new FilterResults();
+                    filterResults.values = list_filtered;
+                    return filterResults;
+                }
+
+                @Override
+                protected void publishResults(CharSequence constraint, FilterResults results) {
+                    list_filtered = (List<String>) results.values;
+                    notifyDataSetChanged();
+                }
+            };
         }
 
         public class ViewHolder extends RecyclerView.ViewHolder {

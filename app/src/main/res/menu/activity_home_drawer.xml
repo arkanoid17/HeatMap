@@ -1,0 +1,19 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/fbt"
+            android:icon="@drawable/ic_plus"
+            android:title="Filter by type" />
+        <item
+            android:id="@+id/fbc"
+            android:icon="@drawable/ic_plus"
+            android:title="Filter by city" />
+        <item
+            android:id="@+id/fbi"
+            android:icon="@drawable/ic_plus"
+            android:title="Filter by Id" />
+
+    </group>
+
+</menu>

@@ -3,9 +3,10 @@ package com.example.heatmap;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
+import java.io.Serializable;
 import java.util.List;
 
-public class Locations {
+public class Locations implements Serializable {
     @SerializedName("type")
     @Expose
     private String type;
