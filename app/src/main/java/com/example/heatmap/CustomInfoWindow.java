@@ -34,8 +34,6 @@ public class CustomInfoWindow implements GoogleMap.InfoWindowAdapter {
     void renderWindowText(Marker marker,View view){
         String id = marker.getTitle();
 
-        Drawable d = view.getBackground();
-
 
         TextView tvId = view.findViewById(R.id.tv_incident_id);
         TextView tvDateTime = view.findViewById(R.id.tv_incident_date_time);
