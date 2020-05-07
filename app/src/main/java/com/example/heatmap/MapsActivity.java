@@ -296,7 +296,15 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         List<LatLng> list = new ArrayList<>();
 
-//        List<String> type = new ArrayList<>();
+        for (int i=0;i<listIncidents.size();i++){
+
+            if (!(typeColor.keySet().contains(listIncidents.get(i).getIncidentTypePrimary()))){
+                Random rnd = new Random();
+                int color = Color.argb(255, rnd.nextInt(256), rnd.nextInt(256), rnd.nextInt(256));
+                typeColor.put(listIncidents.get(i).getIncidentTypePrimary(),color);
+            }
+        }
+
 
 
 
@@ -354,37 +362,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
 
         }
-
-//        if (type.equalsIgnoreCase("All")){
-//            for (int i=0;i<listIncidents.size();i++){
-//                list.add(new LatLng(Double.parseDouble(listIncidents.get(i).getLatitude()),Double.parseDouble(listIncidents.get(i).getLongitude())));
-//            }
-//        }else {
-//            for (int i=0;i<listIncidents.size();i++){
-//
-//                if(type.equalsIgnoreCase(listIncidents.get(i).getIncidentTypePrimary())){
-//                    list.add(new LatLng(Double.parseDouble(listIncidents.get(i).getLatitude()),Double.parseDouble(listIncidents.get(i).getLongitude())));
-//                }
-//
-//            }
-//        }
-
-//
-//        for (int i=0;i<listIncidents.size();i++) {
-//            if (type.equalsIgnoreCase(listIncidents.get(i).getIncidentTypePrimary())){
-//                MarkerOptions m = new MarkerOptions().position(new LatLng(Double.parseDouble(listIncidents.get(i).getLatitude()), Double.parseDouble(listIncidents.get(i).getLongitude()))).title(listIncidents.get(i).getIncidentId());
-//                m.alpha(0);
-//                m.icon(BitmapDescriptorFactory.fromBitmap(smallMarker));
-//                mMap.addMarker(m);
-//            }else{
-//                if (type.equalsIgnoreCase("All")){
-//                    MarkerOptions m = new MarkerOptions().position(new LatLng(Double.parseDouble(listIncidents.get(i).getLatitude()), Double.parseDouble(listIncidents.get(i).getLongitude()))).title(listIncidents.get(i).getIncidentId());
-//                    m.alpha(0);
-//                    m.icon(BitmapDescriptorFactory.fromBitmap(smallMarker));
-//                    mMap.addMarker(m);
-//                }
-//            }
-//        }
 
 
         mMap.setInfoWindowAdapter(new CustomInfoWindow(MapsActivity.this,listIncidents,typeColor));
@@ -503,14 +480,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     }
 
 
-                    for (int i=0;i<listIncidents.size();i++){
 
-                        if (!(typeColor.keySet().contains(listIncidents.get(i).getIncidentTypePrimary()))){
-                            Random rnd = new Random();
-                            int color = Color.argb(255, rnd.nextInt(256), rnd.nextInt(256), rnd.nextInt(256));
-                            typeColor.put(listIncidents.get(i).getIncidentTypePrimary(),color);
-                        }
-                    }
 
 
                 } catch (JSONException e) {
